@@ -1,5 +1,19 @@
 function love.load()
-	love.window.setMode(1200, 900)
+
+	-- set dimensions of drawing area (canvas)
+	can_w=1200
+	can_h=900
+	
+	-- create the canvas and set it's filter to "nearest"
+	canvas=love.graphics.newCanvas(can_w,can_h)
+	--canvas:setFilter("nearest","nearest")
+
+	-- if this is true, we're only going to scale the graphics to multiples, e.g. 2x, 3x and so on
+	-- it doesn't look good on pixelart if we use floating point scales, because
+	-- some pixels will appear bigger and some smaller, so lets use it
+	scaleonlymultiples=false
+
+	love.window.setMode(500, 500,{resizable = true,fullscreen = false})
 	love.window.setTitle("Null Is Zero")
 	ico = love.image.newImageData("sprites/plrnonum.png")
 	love.window.setIcon(ico)
@@ -7,13 +21,14 @@ function love.load()
 	units = {}
 	undos = {}
 	runits = {}
+	inflooped = false
+	HACK_INFINITY = 0
 	
 	numfont1 = love.graphics.newFont("font.ttf",60)
 	numfont2 = love.graphics.newFont("font.ttf",42)
 	numfont3 = love.graphics.newFont("font.ttf",30)
 	numfont4 = love.graphics.newFont("font.ttf",18)
-	
-
+	numfontNAN = love.graphics.newFont("font.ttf",26)
 	
 	levelnumfont = love.graphics.newFont("font.ttf",60)
 	buttonfont = love.graphics.newFont("font.ttf",30)
@@ -22,6 +37,8 @@ function love.load()
 	delthese = {}
 	levels = {}
 	buttons = {}
+	
+	sfxplaying = {win = false, restart = false, setlevel = false}
 	
 	mode = "play"
 	
@@ -47,6 +64,7 @@ function love.load()
 	numoffsets[23][3]={x = 9, y = 16, limit = 8,r = 1, g = 1, b = 1,font = spikenumfont3, ending = 42}
 	numoffsets[23][4]={x = 16, y = 12, limit = 6,r = 1, g = 1, b = 1,font = numfont4, ending = 30}
 	numoffsets[23][5]={x = 16, y = 12, limit = 6,r = 1, g = 1, b = 1,font = numfont4, ending = 30}
+	numoffsets[23][6]={x = 16, y = 12, limit = 6,r = 1, g = 1, b = 1,font = numfont4, ending = 30}
 	
 	objsopen = false
 	objorder = {11,12,2,20,0,1,3,13,21,0,4,5,7,6,10,14,0,8,0,22,0,0,0,0,23,0,0,0,0,9,15,16,17,18,19,0,24}
@@ -54,7 +72,10 @@ function love.load()
 	levelchanged = false
 	cid = 0
 	cimagetype = 0
+	
 	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png"}
+	sssfx = {win = love.audio.newSource("win.ogg","static"), restart = love.audio.newSource("restart.ogg","static"), setlevel = love.audio.newSource("setlevel.ogg","static")}
+	
 	objimages = {}
 	
 	for i,v in pairs(objorder) do
@@ -72,9 +93,13 @@ function love.load()
 end
 
 function playsfx(name)
-	sfx = love.audio.newSource(name..".ogg","static")
-	love.audio.play(sfx)
-	sfx = nil
+	if not sssfx[name] then
+		sfx = love.audio.newSource(name..".ogg","static")
+		love.audio.play(sfx)
+		sfx = nil
+	else
+		love.audio.play(sssfx[name])
+	end
 end
 
 function makeunit(nutype,nx,ny,invalue)
@@ -283,15 +308,27 @@ function move(unit,mx,my)
 end
 
 function loadlevel(num)
+	HACK_INFINITY = HACK_INFINITY + 1
+	if HACK_INFINITY > 100 then
+		inflooped = true
+		love.audio.stop()
+		return
+	end
 	local strnum = tostring(num)
-	levels[levelnum] = deepCopy(runits)
+	if mode == "play" then
+		levels[levelnum] = deepCopy(runits)
+	else 
+		levels[levelnum] = deepCopy(units)
+	end
 	units = levels[strnum] and deepCopy(levels[strnum]) or {}
 	runits = levels[strnum] and deepCopy(levels[strnum]) or {}
 	levelnum = strnum
 	undos = {}
-	parse()
-	addundo()
-	levelchanged = true
+	if mode == "play" then
+		parse()
+		addundo()
+		levelchanged = true
+	end
 end
 
 function totalvalue(tx,ty)
@@ -306,6 +343,9 @@ function totalvalue(tx,ty)
 end
 
 function parse()
+
+	local vchange = false
+
 	for i,chunit in pairs(units) do
 		
 		chunitvalue = totalvalue(chunit.x,chunit.y)
@@ -334,7 +374,10 @@ function parse()
 									playsfx("setlevel")
 									return
 								end
-								inum2.value = chunitvalue
+								if tostring(inum2.value) ~= tostring(chunitvalue) then
+									vchange = true
+									inum2.value = chunitvalue
+								end
 							end
 						elseif op.utype == 9 and chunitvalue == num2 then
 							loadlevel(levelnum+1)
@@ -388,7 +431,10 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue+num2
+										if tostring(inum3.value) ~= tostring(chunitvalue+num2) then
+											vchange = true
+											inum3.value = chunitvalue+num2
+										end
 									end
 								elseif op.utype == 5 then
 									for i,inum3 in pairs(num3s) do
@@ -397,7 +443,10 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue-num2
+										if tostring(inum3.value) ~= tostring(chunitvalue-num2) then
+											vchange = true
+											inum3.value = chunitvalue-num2
+										end
 									end
 								elseif op.utype == 6 then
 									for i,inum3 in pairs(num3s) do
@@ -406,7 +455,10 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue/num2
+										if tostring(inum3.value) ~= tostring(chunitvalue/num2) then
+											vchange = true
+											inum3.value = chunitvalue/num2
+										end
 									end
 								elseif op.utype == 7 then
 									for i,inum3 in pairs(num3s) do
@@ -415,7 +467,10 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue*num2
+										if tostring(inum3.value) ~= tostring(chunitvalue*num2) then
+											vchange = true
+											inum3.value = chunitvalue*num2
+										end
 									end
 								elseif op.utype == 10 then
 									for i,inum3 in pairs(num3s) do
@@ -428,8 +483,11 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue^num2
-										if chunitvalue == 0 and num2 == 0 then inum3.value = 0/0 end
+										if tostring(inum3.value) ~= tostring(chunitvalue^num2) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value ~= 0/0)) then
+											vchange = true
+											inum3.value = chunitvalue^num2
+											if chunitvalue == 0 and num2 == 0 then inum3.value = 0/0 end
+										end
 									end
 								elseif op.utype == 14 then
 									for i,inum3 in pairs(num3s) do
@@ -438,7 +496,10 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										inum3.value = chunitvalue%num2
+										if tostring(inum3.value) ~= tostring(chunitvalue%num2) then
+											vchange = true
+											inum3.value = chunitvalue%num2
+										end
 									end
 								end
 							elseif equals.utype == 9 then
@@ -631,9 +692,18 @@ function parse()
 			
 		end
 	end
+	
+	if vchange then
+		parse()
+	end
+	
 end
 
 function love.mousepressed(mx,my,bt)
+	if not ofs_x and not ofs_y then return end
+	mx = math.floor((love.mouse.getX()-ofs_x)/scale)
+	my = math.floor((love.mouse.getY()-ofs_y)/scale)
+	
 	tx = math.floor(mx/60)
 	ty = math.floor(my/60)
 	
@@ -665,10 +735,14 @@ function love.keypressed(k)
 
 	if k == "m" then
 		if mode == "play" then
+			HACK_INFINITY = 0
+			inflooped = false
 			units = deepCopy(runits)
 			mode = "edit"
 		elseif mode == "edit" then 
 			runits = deepCopy(units)
+			HACK_INFINITY = 0
+			inflooped = false
 			objsopen = false
 			mode = "play"
 			undos = {}
@@ -706,7 +780,7 @@ function love.keypressed(k)
 	
 	if k == "escape" then love.event.push("quit") end
 	
-	if mode == "play" then
+	if mode == "play" and not inflooped then
 		for i,unit in pairs(units) do
 			if unit.utype == 1 or unit.utype == 11 then	
 				if k == "up" or k == "w" then
@@ -722,6 +796,7 @@ function love.keypressed(k)
 		end	
 		
 		if k == "up" or k == "w" or k == "down" or k == "s" or k == "right" or k == "a" or k == "left" or k == "d" then
+			HACK_INFINITY = 0
 			deldels()
 			parse()
 			if not levelchanged then
@@ -733,27 +808,57 @@ function love.keypressed(k)
 		pushplayed = false
 		destroyplayed = false
 	elseif mode == "edit" then
-	
-		if k == "=" then
-			local mx,my = love.mouse.getPosition()
-			tx = math.floor(mx/60)
-			ty = math.floor(my/60)
-			
-			local inc = findunit(tx,ty)[1]
-			
-			if inc and texttypes[inc.utype] == "num" then
-				inc.value = inc.value+1
+		if objsopen == false then
+			if k == "=" then
+				mx = math.floor((love.mouse.getX()-ofs_x)/scale)
+				my = math.floor((love.mouse.getY()-ofs_y)/scale)
+				
+				tx = math.floor(mx/60)
+				ty = math.floor(my/60)
+				
+				local inc = findunit(tx,ty)[1]
+				
+				if inc and texttypes[inc.utype] == "num" then
+					inc.value = inc.value+1
+				end
 			end
-		end
-		
-		if k == "-" then
-			local mx,my = love.mouse.getPosition()
-			tx = math.floor(mx/60)
-			ty = math.floor(my/60)
 			
-			local dec = findunit(tx,ty)[1]
-			if dec and texttypes[dec.utype] == "num" then
-				dec.value = dec.value-1
+			if k == "-" then
+				mx = math.floor((love.mouse.getX()-ofs_x)/scale)
+				my = math.floor((love.mouse.getY()-ofs_y)/scale)
+				
+				tx = math.floor(mx/60)
+				ty = math.floor(my/60)
+				
+				local dec = findunit(tx,ty)[1]
+				if dec and texttypes[dec.utype] == "num" then
+					dec.value = dec.value-1
+				end
+			end
+			
+			if k == "v" then
+				mx = math.floor((love.mouse.getX()-ofs_x)/scale)
+				my = math.floor((love.mouse.getY()-ofs_y)/scale)
+				
+				tx = math.floor(mx/60)
+				ty = math.floor(my/60)
+				
+				local paste = findunit(tx,ty)[1]
+				
+				if paste and texttypes[paste.utype] == "num" then
+					local val = tonumber(love.system.getClipboardText())
+					if val == nil then val = 0/0 end
+					paste.value = val
+				end
+			end
+			
+		else
+			if k == "=" then
+				loadlevel(levelnum+1)
+			end
+			
+			if k == "-" then
+				loadlevel(levelnum-1)
 			end
 		end
 		
@@ -762,13 +867,11 @@ function love.keypressed(k)
 		end
 		
 	end
-	
-	
 end
 
 function newbutton(name,text,cfunc)
 	
-	if buttons[name] then return buttons end --wip line
+	if buttons[name] then return buttons[name] end 
 	
 	local button = {}
 	button[image] = love.graphics.newImage("button.png")
@@ -780,6 +883,50 @@ end
 
 
 function love.draw()
+
+	-- get the dimensions of the current screenmode
+	win_w,win_h=love.window.getMode()
+	
+	-- calculate aspect ratios of window and canvas
+	win_asp=win_w/win_h
+	can_asp=can_w/can_h
+	
+	-- let's compare the aspects to determine the way how to scale and center
+	if win_asp<can_asp then
+		-- if the window's aspect is smaller than the canvas' then it means that we
+		-- need to center the canvas vertically
+		scale = win_w/can_w
+		ofs_x = 0
+		ofs_y = (win_h-can_h*scale)/2
+	else
+		-- otherwise we have to center the canvas horizontally
+		scale = win_h/can_h
+		ofs_x = (win_w-can_w*scale)/2
+		ofs_y = 0
+	end
+ 
+	-- we want scaling only to happen for multiples? fine!
+	if scaleonlymultiples then
+		-- trim the scaling factor down to nearest whole number
+		scale=math.floor(scale)
+	
+		-- but don't scale less than 1
+		if scale<1 then scale=1 end
+	
+		-- now we probably need to center in both directions, lets calculate the distances
+		gap_h=win_w-can_w*scale
+		if gap_h>0 then ofs_x=gap_h/2 end
+		
+		gap_v=win_h-can_h*scale
+		if gap_v>0 then ofs_y=gap_v/2 end
+	end
+	
+	
+	-- all drawing should happen on canvas instead of screen
+	love.graphics.setCanvas(canvas)
+	love.graphics.setBackgroundColor(0,0,0)
+	love.graphics.clear()
+	love.graphics.setBlendMode("alpha")
 	
 	if not objsopen then
 		for i,unit in pairs(units) do
@@ -794,7 +941,18 @@ function love.draw()
 			if texttypes[unit.utype] == "num" and unit.utype ~= 24 then
 				
 					love.graphics.setColor(0,0,0)
-					if #tostring(unit.value) == 1 then --WIP code for text drawing
+					
+					if tostring(unit.value) == "nan" then
+						if numoffsets[unit.utype] and numoffsets[unit.utype][6] then
+							local offsettable = numoffsets[unit.utype][6]
+							love.graphics.setFont(offsettable.font)
+							love.graphics.setColor(offsettable.r,offsettable.g,offsettable.b)
+							love.graphics.printf(string.sub(tostring(unit.value),1,offsettable.limit), unit.x*60+offsettable.x, unit.y*60+offsettable.y,offsettable.ending,"center") 
+						else
+							love.graphics.setFont(numfontNAN)
+							love.graphics.printf(tostring(unit.value), unit.x*60+10, unit.y*60+15,42,"center")
+						end
+					elseif #tostring(unit.value) == 1 then
 						if numoffsets[unit.utype] and numoffsets[unit.utype][1] then
 							local offsettable = numoffsets[unit.utype][1]
 							love.graphics.setFont(offsettable.font)
@@ -858,13 +1016,21 @@ function love.draw()
 	end
 	
 	if mode == "edit" and cutype > 0 and not objsopen then
-		mx, my = love.mouse.getPosition()
+		mx = math.floor((love.mouse.getX()-ofs_x)/scale)
+		my = math.floor((love.mouse.getY()-ofs_y)/scale)
 		love.graphics.setColor(1, 1, 1,0.2)
 		if cimagetype ~= cutype then
 			cimage = love.graphics.newImage("sprites/"..images[cutype])
 			cimagetype = cutype
 		end
 		love.graphics.draw(cimage, math.floor(mx/60)*60, math.floor(my/60)*60)
+	end
+	
+	if inflooped then
+		love.graphics.clear()
+		love.graphics.setColor(1, 0, 0.6)
+		love.graphics.setFont(titlefont)
+		love.graphics.print("Infinite Loop", 120, 360)
 	end
 	
 	love.graphics.setColor(0.1, 0.1, 0.2)
@@ -884,6 +1050,24 @@ function love.draw()
 		love.graphics.setFont(titlefont)
 		love.graphics.print("Null Is Zero", 180, 120)
 	end
+	
+	
+	
+	
+	
+	-- switch all drawing operations to screen
+	love.graphics.setCanvas()
+	love.graphics.clear()
+	
+	-- we use "premultiplied" blending which is needed for correct behaviour of transparency
+	love.graphics.setBlendMode("alpha","premultiplied")
+	
+	-- we set foreground color to white and clear the screen with black
+	love.graphics.setColor(1,1,1,1)
+
+	-- copy scaled and translated canvas to screen
+	love.graphics.draw(canvas,ofs_x,ofs_y,0,scale)
+	
 end
 
 
