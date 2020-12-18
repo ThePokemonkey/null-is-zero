@@ -1,4 +1,4 @@
-#Null Is Zero
+# Null is Zero
 
 Null Is Zero is a (WIP) remade version of the game with the same title made for Ludum Dare 45.
 It's a puzzle game based on Baba Is You, where you can push around numbers and mathematical symbols to crate equations, and win the level by creating an equation that satisfies a conditional statment.
