@@ -495,7 +495,7 @@ function parse()
 											playsfx("setlevel")
 											return
 										end
-										if tostring(inum3.value) ~= tostring(chunitvalue^num2) and (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
+										if (tostring(inum3.value) ~= tostring(chunitvalue^num2) and not (chunitvalue == 0 and num2 == 0)) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
 											vchange = true
 											inum3.value = chunitvalue^num2
 											if chunitvalue == 0 and num2 == 0 then inum3.value = 0/0 end
