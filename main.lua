@@ -74,7 +74,7 @@ function love.load()
 	cimagetype = 0
 	
 	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png"}
-	sssfx = {win = love.audio.newSource("win.ogg","static"), restart = love.audio.newSource("restart.ogg","static"), setlevel = love.audio.newSource("setlevel.ogg","static")}
+	sssfx = {win = love.audio.newSource("sfx/win.ogg","static"), restart = love.audio.newSource("sfx/restart.ogg","static"), setlevel = love.audio.newSource("sfx/setlevel.ogg","static")}
 	
 	objimages = {}
 	
@@ -94,7 +94,7 @@ end
 
 function playsfx(name)
 	if not sssfx[name] then
-		sfx = love.audio.newSource(name..".ogg","static")
+		sfx = love.audio.newSource("sfx/"..name..".ogg","static")
 		love.audio.play(sfx)
 		sfx = nil
 	else
@@ -250,7 +250,7 @@ function move(unit,mx,my)
 					table.remove(obsts,i)
 					
 				elseif obst.utype == 21 then
-					if texttypes[ceunit.utype] == "num" and ceunit.value == obst.value then
+					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
 					
 						table.insert(delthese,obstid)
 						table.insert(delthese,ceunitid)
@@ -263,7 +263,7 @@ function move(unit,mx,my)
 						
 					end
 				elseif obst.utype == 23 then
-					if texttypes[ceunit.utype] == "num" and ceunit.value == obst.value then
+					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
 					
 						table.insert(delthese,ceunitid)
 						
@@ -340,6 +340,18 @@ function totalvalue(tx,ty)
 		end
 	end
 	return rtotal
+end
+
+function checkdels()
+	for i,chdunit in pairs(units) do
+		if texttypes[chdunit.utype] == "num" and chdunit.utype ~= 23 then
+			for i,chdunit2 in pairs(findunit(chdunit.x,chdunit.y)) do
+				if chdunit2.utype == 23 and chdunit2.value == chdunit.value then
+					table.insert(delthese,chdunit.id)
+				end
+			end
+		end
+	end
 end
 
 function parse()
@@ -694,6 +706,7 @@ function parse()
 	end
 	
 	if vchange then
+		checkdels()
 		parse()
 	end
 	
@@ -799,6 +812,7 @@ function love.keypressed(k)
 			HACK_INFINITY = 0
 			deldels()
 			parse()
+			deldels()
 			if not levelchanged then
 				addundo()
 			end
