@@ -18,3 +18,4 @@ right click in editor -> choose tile to place from current level
 +/- in editor -> increment/decrement number values
 +/- in object list -> increment/decrement level number
 v in editor -> paste number value from clipboard into cell
+b in editor -> save current levelpack 
