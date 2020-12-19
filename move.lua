@@ -37,7 +37,7 @@ function move(unit,mx,my)
 					table.remove(obsts,i)
 					
 				elseif obst.utype == 21 then
-					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
+					if (texttypes[ceunit.utype] == "num" or texttypes[ceunit.utype] == "numop" or texttypes[ceunit.utype] == "numequals") and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
 					
 						table.insert(delthese,obstid)
 						table.insert(delthese,ceunitid)
@@ -50,7 +50,7 @@ function move(unit,mx,my)
 						
 					end
 				elseif obst.utype == 23 then
-					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
+					if (texttypes[ceunit.utype] == "num" or texttypes[ceunit.utype] == "numop" or texttypes[ceunit.utype] == "numequals") and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
 					
 						table.insert(delthese,ceunitid)
 						
