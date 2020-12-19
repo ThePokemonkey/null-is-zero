@@ -77,6 +77,12 @@ function love.load()
 	sssfx = {win = love.audio.newSource("sfx/win.ogg","static"), restart = love.audio.newSource("sfx/restart.ogg","static"), setlevel = love.audio.newSource("sfx/setlevel.ogg","static")}
 	
 	objimages = {}
+  objimages_2 = {}
+  
+  --TODO: making images twice to put them in two separate tables is silly. having two different tables is OK since they represent different orders but the images should only be made once
+  for i,v in pairs(images) do
+    table.insert(objimages_2, love.graphics.newImage("sprites/"..v))
+  end
 	
 	for i,v in pairs(objorder) do
 		if v > 0 then
@@ -87,9 +93,17 @@ function love.load()
 		end
 	end
 	
+	serpent = require("serpent")
 	require("parse")
 	require("tools")
 	require("move")
+	require("save")
+	
+	local savedata = loadworld()
+  if savedata ~= nil then
+    levels = savedata
+    units = levels[levelnum]
+  end
 	
 	--texts = {"+","-","/","x","=","==","^"}
 	--colors = {{r = 1,g = 0, b = 0.7},{r = 0.25, g = 0.25, b = 0.25},{r = 0.3, g = 0.3, b = 1},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8}}
@@ -235,6 +249,11 @@ function love.keypressed(k)
 				end
 			end
 			
+			if k == "b" then
+				levels[levelnum] = deepCopy(units)
+				saveworld(levels)
+			end
+			
 			if k == "v" then
 				mx = math.floor((love.mouse.getX()-ofs_x)/scale)
 				my = math.floor((love.mouse.getY()-ofs_y)/scale)
@@ -320,9 +339,7 @@ function love.draw()
 			
 			love.graphics.setColor(1, 1, 1)
 			
-			if not unit.image then unit.image = love.graphics.newImage("sprites/"..images[utype]) end
-			
-			love.graphics.draw(unit.image, unit.x*60, unit.y*60)
+			love.graphics.draw(objimages_2[unit.utype], unit.x*60, unit.y*60)
 			
 			if (texttypes[unit.utype] == "num" or texttypes[unit.utype] == "numop" or texttypes[unit.utype] == "numequals") and unit.utype ~= 24 then
 				
