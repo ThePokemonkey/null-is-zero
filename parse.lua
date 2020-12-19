@@ -1,7 +1,10 @@
 function parse()
 
 	local vchange = false
-
+	local levelsetunits = {}
+	local levelsetvalue = 0
+	local lschange = false
+	
 	for i,chunit in pairs(units) do
 		
 		chunitvalue = totalvalue(chunit.x,chunit.y)
@@ -26,11 +29,22 @@ function parse()
 						if op.utype == 8 or op.utype == 31 then
 							for i,inum2 in pairs(num2s) do
 								if inum2.utype == 24 then
-									loadlevel(chunitvalue)
-									playsfx("setlevel")
-									return
-								end
-								if tostring(inum2.value) ~= tostring(chunitvalue) then
+								
+									local newlsunit = true
+									
+									for i,v in pairs(levelsetunits) do
+										if v == chunit then
+											newlsunit = false
+										end
+									end
+									
+									if newlsunit then
+										table.insert(levelsetunits,chunit)
+										levelsetvalue = levelsetvalue + chunit.value
+										lschange = true
+									end
+									
+								elseif tostring(inum2.value) ~= tostring(chunitvalue) then
 									vchange = true
 									inum2.value = chunitvalue
 								end
@@ -83,11 +97,21 @@ function parse()
 								if op.utype == 4 or op.utype == 25 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											loadlevel(chunitvalue+num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue+num2) then
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
+											end
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												levelsetvalue = levelsetvalue + (chunit.value+num2)
+												lschange = true
+											end
+											
+										elseif tostring(inum3.value) ~= tostring(chunitvalue+num2) then
 											vchange = true
 											inum3.value = chunitvalue+num2
 										end
@@ -95,11 +119,20 @@ function parse()
 								elseif op.utype == 5 or op.utype == 26 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											loadlevel(chunitvalue-num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue-num2) then
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
+											end
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												levelsetvalue = levelsetvalue + (chunit.value-num2)
+												lschange = true
+											end
+										elseif tostring(inum3.value) ~= tostring(chunitvalue-num2) then
 											vchange = true
 											inum3.value = chunitvalue-num2
 										end
@@ -107,11 +140,20 @@ function parse()
 								elseif op.utype == 6 or op.utype == 28 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											loadlevel(chunitvalue/num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue/num2) then
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
+											end
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												levelsetvalue = levelsetvalue + (chunit.value/num2)
+												lschange = true
+											end
+										elseif tostring(inum3.value) ~= tostring(chunitvalue/num2) then
 											vchange = true
 											inum3.value = chunitvalue/num2
 										end
@@ -119,11 +161,20 @@ function parse()
 								elseif op.utype == 7 or op.utype == 27 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											loadlevel(chunitvalue*num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue*num2) then
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
+											end
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												levelsetvalue = levelsetvalue + (chunit.value*num2)
+												lschange = true
+											end
+										elseif tostring(inum3.value) ~= tostring(chunitvalue*num2) then
 											vchange = true
 											inum3.value = chunitvalue*num2
 										end
@@ -131,15 +182,24 @@ function parse()
 								elseif op.utype == 10 or op.utype == 29 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											if chunitvalue == 0 and num2 == 0 then
-												loadlevel(0/0)
-											else
-												loadlevel(chunitvalue^num2)
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
 											end
-											playsfx("setlevel")
-											return
-										end
-										if (tostring(inum3.value) ~= tostring(chunitvalue^num2) and not (chunitvalue == 0 and num2 == 0)) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												if chunit.value == 0 and num2 == 0 then
+													levelsetvalue = 0/0
+												else
+													levelsetvalue = levelsetvalue + (chunit.value^num2)
+												end
+												lschange = true
+											end
+										elseif (tostring(inum3.value) ~= tostring(chunitvalue^num2) and not (chunitvalue == 0 and num2 == 0)) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
 											vchange = true
 											inum3.value = chunitvalue^num2
 											if chunitvalue == 0 and num2 == 0 then inum3.value = 0/0 end
@@ -148,11 +208,20 @@ function parse()
 								elseif op.utype == 14 or op.utype == 30 then
 									for i,inum3 in pairs(num3s) do
 										if inum3.utype == 24 then
-											loadlevel(chunitvalue%num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue%num2) then
+											local newlsunit = true
+									
+											for i,v in pairs(levelsetunits) do
+												if v == chunit then
+													newlsunit = false
+												end
+											end
+									
+											if newlsunit then
+												table.insert(levelsetunits,chunit)
+												levelsetvalue = levelsetvalue + (chunit.value%num2)
+												lschange = true
+											end
+										elseif tostring(inum3.value) ~= tostring(chunitvalue%num2) then
 											vchange = true
 											inum3.value = chunitvalue%num2
 										end
@@ -348,6 +417,13 @@ function parse()
 			
 		end
 	end
+	
+	if lschange and not vchange then
+		loadlevel(levelsetvalue)
+		playsfx("setlevel")
+		return
+	end
+	
 	
 	if vchange then
 		checkdels()
