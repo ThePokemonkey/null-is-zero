@@ -44,7 +44,7 @@ function love.load()
 	
 	levelnum = "1"
 	
-	texttypes = {"num",0,"num","op","op","op","op","equals","equals","op",0,0,"num","op","equals","equals","equals","equals","equals",0,"num",0,"num","num"}
+	texttypes = {"num",0,"num","op","op","op","op","equals","equals","op",0,0,"num","op","equals","equals","equals","equals","equals",0,"num",0,"num","num","numop","numop","numop","numop","numop","numop","numequals","numequals","numequals","numequals","numequals","numequals","numequals"}
 	
 	numoffsets = {}
 	
@@ -67,13 +67,13 @@ function love.load()
 	numoffsets[23][6]={x = 16, y = 12, limit = 6,r = 1, g = 1, b = 1,font = numfont4, ending = 30}
 	
 	objsopen = false
-	objorder = {11,12,2,20,0,1,3,13,21,0,4,5,7,6,10,14,0,8,0,22,0,0,0,0,23,0,0,0,0,9,15,16,17,18,19,0,24}
+	objorder = {11,12,2,20,0,1,3,13,21,0,4,5,7,6,10,14,0,8,0,22,0,0,0,0,23,0,0,0,0,9,15,16,17,18,19,0,24,0,0,0,0,0,0,0,0,0,0,0,25,26,27,28,29,30,0,31,0,0,0,0,0,0,0,0,0,0,0,32,33,34,35,36,37}
 	cutype = 0
 	levelchanged = false
 	cid = 0
 	cimagetype = 0
 	
-	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png"}
+	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png","plusnum.png","minusnum.png","timesnum.png","dividenum.png","exponentnum.png","modulonum.png","equalsnum.png","equalschecknum.png","lessthannum.png","greaterthannum.png","lessthanequalsnum.png","greaterthanequalsnum.png","notequalsnum.png"}
 	sssfx = {win = love.audio.newSource("sfx/win.ogg","static"), restart = love.audio.newSource("sfx/restart.ogg","static"), setlevel = love.audio.newSource("sfx/setlevel.ogg","static")}
 	
 	objimages = {}
@@ -87,630 +87,15 @@ function love.load()
 		end
 	end
 	
+	require("parse")
+	require("tools")
+	require("move")
+	
 	--texts = {"+","-","/","x","=","==","^"}
 	--colors = {{r = 1,g = 0, b = 0.7},{r = 0.25, g = 0.25, b = 0.25},{r = 0.3, g = 0.3, b = 1},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8}}
 	--colors2 = {{r = 1,g = 0.3, b = 1},{r = 0.25, g = 0.25, b = 0.25},{r = 0.45, g = 0.45, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1}}
 end
 
-function playsfx(name)
-	if not sssfx[name] then
-		sfx = love.audio.newSource("sfx/"..name..".ogg","static")
-		love.audio.play(sfx)
-		sfx = nil
-	else
-		love.audio.play(sssfx[name])
-	end
-end
-
-function makeunit(nutype,nx,ny,invalue)
-	nvalue = invalue or 0
-	if nutype > 0 then
-		if nutype == 24 then nvalue = levelnum end
-		local image = love.graphics.newImage("sprites/"..images[nutype])
-		table.insert(units,{utype = nutype,x = nx,y = ny,value = nvalue,image,id = cid+1})
-		cid = cid+1
-		return
-	end
-end
-
-function findunit(sx,sy)
-	local endtable = {}
-	for i,unit in pairs(units) do
-		if unit.x == sx and unit.y == sy then table.insert(endtable,unit)  end
-	end
-	return endtable
-end
-
-function findop(sx,sy)
-	local units = findunit(sx,sy)
-	for i,unit in pairs(units) do
-		if texttypes[unit.utype] == "op" then return unit end
-	end
-end
-
-function findeq(sx,sy)
-	local units = findunit(sx,sy)
-	for i,unit in pairs(units) do
-		if texttypes[unit.utype] == "equals" then return unit end
-	end
-end
-
-function findnum(sx,sy)
-	local units = findunit(sx,sy)
-	for i,unit in pairs(units) do
-		if texttypes[unit.utype] == "num" then return unit end
-	end
-end
-
-function findnums(sx,sy)
-	local units = findunit(sx,sy)
-	local endtable = {}
-	for i,unit in pairs(units) do
-		if texttypes[unit.utype] == "num" then table.insert(endtable,unit) end
-	end
-	return endtable
-end
-
-function findopeq(sx,sy)
-	local units = findunit(sx,sy)
-	for i,unit in pairs(units) do
-		if texttypes[unit.utype] == "equals" or texttypes[unit.utype] == "op" then return unit end
-	end
-end
-
-function findunitid(id)
-	for i,unit in pairs(units) do
-		if unit.id == id then return unit,i end
-	end
-end
-
-
-function inbounds(cx,cy)
-	if cx > 0 and cx < 19 and cy > 0 and cy < 14 then return true else return end
-end
-
-function breakunit(rx,ry)
-	local tunits = findunit(rx,ry)
-	if #tunits > 0 then
-		for i,v in pairs(tunits) do
-			local h, index = findunitid(v.id)
-			table.remove(units,index) 
-		end
-	end
-end
-
-function breakunitid(id)
-	local tunit,index = findunitid(id)
-	if tunit then table.remove(units,index) end
-end
-
-function deepCopy(original)
-	local copy = {}
-	for k, v in pairs(original) do
-		if type(v) == "table" then
-			v = deepCopy(v)
-		end
-		copy[k] = v
-	end
-	return copy
-end
-
-function addundo()
-	local cunits = deepCopy(units)
-	table.insert(undos,cunits)
-end
-
-function deldels()
-	for i,v in pairs(delthese) do
-		breakunitid(v)
-		if not destroyplayed then
-			playsfx("destroy")
-			destroyplayed = true
-		end
-	end
-	delthese = {}
-end
-
-function move(unit,mx,my)
-	local tx, ty = unit.x + mx, unit.y + my
-	
-	local pushed = {}
-	
-	local obsts = findunit(tx,ty)
-	local ccx,ccy = tx,ty
-	
-	local ceunitid = unit.id
-	local obstid
-	
-	local obstgone = false
-	
-	ceunit = findunitid(ceunitid)
-	
-	if #obsts > 0 then
-		repeat 
-			for i,obst in pairs(obsts) do
-				obstid = obst.id
-				if obst.utype == 2 or obst.utype == 13 then return end
-			
-				if obst.utype == 1 or obst.utype == 11 then
-					ccx,ccy = ccx+mx,ccy+my
-					ceunitid = obstid
-					obsts = findunit(ccx,ccy)
-					
-					ceunit = findunitid(ceunitid)
-				elseif obst.utype == 20 then
-					table.insert(delthese,obstid)
-					
-					table.insert(delthese,ceunitid)
-					
-					table.remove(obsts,i)
-				elseif obst.utype == 22 then
-					
-					table.insert(delthese,ceunitid)
-					table.remove(obsts,i)
-					
-				elseif obst.utype == 21 then
-					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
-					
-						table.insert(delthese,obstid)
-						table.insert(delthese,ceunitid)
-						
-						table.remove(obsts,i)
-						
-					else
-				
-						return
-						
-					end
-				elseif obst.utype == 23 then
-					if texttypes[ceunit.utype] == "num" and (ceunit.value == obst.value or (ceunit.utype == 24 and tostring(obst.value) == tostring(levelnum))) then
-					
-						table.insert(delthese,ceunitid)
-						
-					end
-					table.remove(obsts,i)
-				else
-					table.insert(pushed,obst)
-					ccx,ccy = ccx+mx,ccy+my
-					ceunitid = obstid
-					obsts = findunit(ccx,ccy)
-					ceunit = findunitid(ceunitid)
-				end
-			end
-			
-			if not inbounds(ccx,ccy) then return end
-			
-		until #obsts == 0 or obstgone
-	end
-	
-	if inbounds(tx,ty) then
-		for i,punit in pairs(pushed) do
-			punit.x = punit.x + mx
-			punit.y = punit.y + my
-			
-			if not pushplayed and #delthese == 0 then
-				playsfx("push")
-				pushplayed = true
-			end
-			
-		end
-		
-		
-		if not moveplayed and not pushplayed and #delthese == 0 then
-			playsfx("move")
-			moveplayed = true
-		end
-		
-		if unit then
-			unit.x,unit.y = tx,ty
-		end
-	end
-end
-
-function loadlevel(num)
-	HACK_INFINITY = HACK_INFINITY + 1
-	if HACK_INFINITY > 100 then
-		inflooped = true
-		love.audio.stop()
-		return
-	end
-	local strnum = tostring(num)
-	if mode == "play" then
-		levels[levelnum] = deepCopy(runits)
-	else 
-		levels[levelnum] = deepCopy(units)
-	end
-	units = levels[strnum] and deepCopy(levels[strnum]) or {}
-	runits = levels[strnum] and deepCopy(levels[strnum]) or {}
-	levelnum = strnum
-	undos = {}
-	if mode == "play" then
-		parse()
-		addundo()
-		levelchanged = true
-	end
-end
-
-function totalvalue(tx,ty)
-	local nums = findunit(tx,ty)
-	local rtotal = 0
-	for i,v in pairs(nums) do
-		if texttypes[v.utype] == "num" then
-			rtotal = rtotal+v.value
-		end
-	end
-	return rtotal
-end
-
-function checkdels()
-	for i,chdunit in pairs(units) do
-		if texttypes[chdunit.utype] == "num" and chdunit.utype ~= 23 then
-			for i,chdunit2 in pairs(findunit(chdunit.x,chdunit.y)) do
-				if chdunit2.utype == 23 and chdunit2.value == chdunit.value then
-					table.insert(delthese,chdunit.id)
-				end
-			end
-		end
-	end
-end
-
-function parse()
-
-	local vchange = false
-
-	for i,chunit in pairs(units) do
-		
-		chunitvalue = totalvalue(chunit.x,chunit.y)
-		
-		if texttypes[chunit.utype] == "num" then
-		
-			local op = findopeq(chunit.x+1,chunit.y)
-			
-			if op and texttypes[op.utype] == "equals" then
-				local findop = findop(chunit.x-1,chunit.y)
-				local findop2 = findnum(chunit.x-2,chunit.y)
-				
-				if not findop or not findop2 then
-					
-					local findnum2 = findnum(chunit.x+2,chunit.y)
-					
-					if findnum2 then
-						
-						local num2s = findnums(chunit.x+2,chunit.y)
-						local num2 = totalvalue(chunit.x+2,chunit.y)
-						
-						if op.utype == 8 then
-							for i,inum2 in pairs(num2s) do
-								if inum2.utype == 24 then
-									loadlevel(chunitvalue)
-									playsfx("setlevel")
-									return
-								end
-								if tostring(inum2.value) ~= tostring(chunitvalue) then
-									vchange = true
-									inum2.value = chunitvalue
-								end
-							end
-						elseif op.utype == 9 and chunitvalue == num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						elseif op.utype == 15 and chunitvalue < num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						elseif op.utype == 16 and chunitvalue > num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						elseif op.utype == 17 and chunitvalue <= num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						elseif op.utype == 18 and chunitvalue >= num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						elseif op.utype == 19 and chunitvalue ~= num2 then
-							loadlevel(levelnum+1)
-							
-							playsfx("win")
-						end
-					end
-				end
-				
-			elseif op and (texttypes[op.utype] == "op") then
-			
-				local num2s = findnums(chunit.x+2,chunit.y)
-				num2 = totalvalue(chunit.x+2,chunit.y)
-				
-				if #num2s > 0 then
-				
-					local equals = findeq(chunit.x+3,chunit.y)
-					
-					if equals then
-					
-						local num3s = findnums(chunit.x+4,chunit.y)
-						num3 = totalvalue(chunit.x+4,chunit.y)
-						
-						if #num3s > 0 then
-						
-							if equals.utype == 8 then
-								if op.utype == 4 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											loadlevel(chunitvalue+num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue+num2) then
-											vchange = true
-											inum3.value = chunitvalue+num2
-										end
-									end
-								elseif op.utype == 5 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											loadlevel(chunitvalue-num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue-num2) then
-											vchange = true
-											inum3.value = chunitvalue-num2
-										end
-									end
-								elseif op.utype == 6 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											loadlevel(chunitvalue/num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue/num2) then
-											vchange = true
-											inum3.value = chunitvalue/num2
-										end
-									end
-								elseif op.utype == 7 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											loadlevel(chunitvalue*num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue*num2) then
-											vchange = true
-											inum3.value = chunitvalue*num2
-										end
-									end
-								elseif op.utype == 10 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											if chunitvalue == 0 and num2 == 0 then
-												loadlevel(0/0)
-											else
-												loadlevel(chunitvalue^num2)
-											end
-											playsfx("setlevel")
-											return
-										end
-										if (tostring(inum3.value) ~= tostring(chunitvalue^num2) and not (chunitvalue == 0 and num2 == 0)) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
-											vchange = true
-											inum3.value = chunitvalue^num2
-											if chunitvalue == 0 and num2 == 0 then inum3.value = 0/0 end
-										end
-									end
-								elseif op.utype == 14 then
-									for i,inum3 in pairs(num3s) do
-										if inum3.utype == 24 then
-											loadlevel(chunitvalue%num2)
-											playsfx("setlevel")
-											return
-										end
-										if tostring(inum3.value) ~= tostring(chunitvalue%num2) then
-											vchange = true
-											inum3.value = chunitvalue%num2
-										end
-									end
-								end
-							elseif equals.utype == 9 then
-								if op.utype == 4 and chunitvalue + num2 == num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and num3 == chunitvalue-num2 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and num3 == chunitvalue/num2 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and num3 == chunitvalue*num2 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (num3 == chunitvalue^num2 or (chunitvalue == 0 and num2 == 0 and num3 == 0/0)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and num3 == chunitvalue%num2 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							elseif equals.utype == 15 then
-								if op.utype == 4 and chunitvalue + num2 < num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and  chunitvalue-num2 < num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and chunitvalue/num2 < num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and chunitvalue*num2 < num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (chunitvalue^num2 < num3 or (chunitvalue == 0 and num2 == 0 and 0/0 < num3)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and chunitvalue%num2 < num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							elseif equals.utype == 16 then
-								if op.utype == 4 and chunitvalue + num2 > num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and  chunitvalue-num2 > num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and chunitvalue/num2 > num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and chunitvalue*num2 > num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (chunitvalue^num2 > num3 or (chunitvalue == 0 and num2 == 0 and 0/0 > num3)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and chunitvalue%num2 > num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							elseif equals.utype == 17 then
-								if op.utype == 4 and chunitvalue + num2 <= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and  chunitvalue-num2 <= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and chunitvalue/num2 <= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and chunitvalue*num2 <= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (chunitvalue^num2 <= num3 or (chunitvalue == 0 and num2 == 0 and 0/0 <= num3)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and chunitvalue%num2 <= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							elseif equals.utype == 18 then
-								if op.utype == 4 and chunitvalue + num2 >= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and  chunitvalue-num2 >= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and chunitvalue/num2 >= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and chunitvalue*num2 >= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (chunitvalue^num2 >= num3 or (chunitvalue == 0 and num2 == 0 and 0/0 >= num3)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and chunitvalue%num2 >= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							elseif equals.utype == 19 then
-								if op.utype == 4 and chunitvalue + num2 ~= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 5 and  chunitvalue-num2 ~= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 6 and chunitvalue/num2 ~= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 7 and chunitvalue*num2 ~= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-									
-								elseif op.utype == 10 and (chunitvalue^num2 ~= num3 or (chunitvalue == 0 and num2 == 0 and 0/0 ~= num3)) then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								elseif op.utype == 14 and chunitvalue%num2 ~= num3 then
-									loadlevel(levelnum+1)
-									
-									playsfx("win")
-								end
-							end
-						end
-						
-					end
-					
-				end
-			end
-			
-		end
-	end
-	
-	if vchange then
-		checkdels()
-		parse()
-	end
-	
-end
 
 function love.mousepressed(mx,my,bt)
 	if not ofs_x and not ofs_y then return end
@@ -832,7 +217,7 @@ function love.keypressed(k)
 				
 				local inc = findunit(tx,ty)[1]
 				
-				if inc and texttypes[inc.utype] == "num" then
+				if inc and (texttypes[inc.utype] == "num" or texttypes[inc.utype] == "numop" or texttypes[inc.utype] == "numequals") then
 					inc.value = inc.value+1
 				end
 			end
@@ -845,7 +230,7 @@ function love.keypressed(k)
 				ty = math.floor(my/60)
 				
 				local dec = findunit(tx,ty)[1]
-				if dec and texttypes[dec.utype] == "num" then
+				if dec and (texttypes[dec.utype] == "num" or texttypes[dec.utype] == "numop" or texttypes[dec.utype] == "numequals") then
 					dec.value = dec.value-1
 				end
 			end
@@ -859,7 +244,7 @@ function love.keypressed(k)
 				
 				local paste = findunit(tx,ty)[1]
 				
-				if paste and texttypes[paste.utype] == "num" then
+				if paste and (texttypes[paste.utype] == "num" or texttypes[paste.utype] == "numop" or texttypes[paste.utype] == "numequals") then
 					local val = tonumber(love.system.getClipboardText())
 					if val == nil then val = 0/0 end
 					paste.value = val
@@ -882,19 +267,6 @@ function love.keypressed(k)
 		
 	end
 end
-
-function newbutton(name,text,cfunc)
-	
-	if buttons[name] then return buttons[name] end 
-	
-	local button = {}
-	button[image] = love.graphics.newImage("button.png")
-	button[text] = text
-	button[cfunc] = cfunc
-	
-	
-end
-
 
 function love.draw()
 
@@ -952,7 +324,7 @@ function love.draw()
 			
 			love.graphics.draw(unit.image, unit.x*60, unit.y*60)
 			
-			if texttypes[unit.utype] == "num" and unit.utype ~= 24 then
+			if (texttypes[unit.utype] == "num" or texttypes[unit.utype] == "numop" or texttypes[unit.utype] == "numequals") and unit.utype ~= 24 then
 				
 					love.graphics.setColor(0,0,0)
 					
