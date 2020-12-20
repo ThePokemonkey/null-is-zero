@@ -102,13 +102,20 @@ function love.load()
 	local savedata = loadworld()
   if savedata ~= nil then
     levels = savedata
-    units = levels[levelnum]
-	runits = levels[levelnum]
+	units = levels["1"] and deepCopy(levels["1"]) or {}
+	runits = levels["1"] and deepCopy(levels["1"]) or {}
+	parse()
+	addundo()
   end
+  
+	for i, level in pairs(levels) do
+		for i,unit in pairs(level) do
+			if unit.id > cid then cid = unit.id end
+		end
+	end
 	
-	--texts = {"+","-","/","x","=","==","^"}
-	--colors = {{r = 1,g = 0, b = 0.7},{r = 0.25, g = 0.25, b = 0.25},{r = 0.3, g = 0.3, b = 1},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8},{r = 0.8, g = 0.8, b = 0.8}}
-	--colors2 = {{r = 1,g = 0.3, b = 1},{r = 0.25, g = 0.25, b = 0.25},{r = 0.45, g = 0.45, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1},{r = 1, g = 1, b = 1}}
+	cid = cid+1
+	
 end
 
 
