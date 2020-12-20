@@ -103,6 +103,7 @@ function love.load()
   if savedata ~= nil then
     levels = savedata
     units = levels[levelnum]
+	runits = levels[levelnum]
   end
 	
 	--texts = {"+","-","/","x","=","==","^"}
