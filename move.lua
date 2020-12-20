@@ -90,6 +90,7 @@ function move(unit,mx,my)
 		
 		if unit then
 			unit.x,unit.y = tx,ty
+			checkdels()
 		end
 	end
 end
