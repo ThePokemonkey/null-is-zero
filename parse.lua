@@ -1,9 +1,36 @@
 function parse()
 
+	PHACK_INFINITY = PHACK_INFINITY + 1
+	if PHACK_INFINITY == 1 then
+		infx = x
+		infy = y
+		infz = z
+	elseif PHACK_INFINITY > 250 then
+		inflooped = true
+		playsfx("setlevel")
+		x = infx
+		y = infy
+		z = infz
+		return
+	end
+	
 	local vchange = false
+	
 	local levelsetunits = {}
 	local levelsetvalue = 0
 	local lschange = false
+	
+	local xsetunits = {}
+	local xsetvalue = 0
+	local xchange = false
+	
+	local ysetunits = {}
+	local ysetvalue = 0
+	local ychange = false
+	
+	local zsetunits = {}
+	local zsetvalue = 0
+	local zchange = false
 	
 	for i,chunit in pairs(units) do
 		
@@ -29,19 +56,67 @@ function parse()
 						if op.utype == 8 or op.utype == 31 then
 							for i,inum2 in pairs(num2s) do
 								if inum2.utype == 24 then
-								
+									
 									local newlsunit = true
 									
 									for i,v in pairs(levelsetunits) do
-										if v == chunit then
+										if v.x == chunit.x and v.y == chunit.y then
 											newlsunit = false
 										end
 									end
 									
 									if newlsunit then
-										table.insert(levelsetunits,chunit)
-										levelsetvalue = levelsetvalue + chunit.value
+										table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+										levelsetvalue = levelsetvalue + chunitvalue
 										lschange = true
+									end
+									
+								elseif inum2.utype == 38 then
+									
+									local newxunit = true
+									
+									for i,v in pairs(xsetunits) do
+										if v.x == chunit.x and v.y == chunit.y then
+											newxunit = false
+										end
+									end
+									
+									if newxunit then
+										table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+										xsetvalue = xsetvalue + chunitvalue
+										xchange = true
+									end
+									
+								elseif inum2.utype == 39 then
+									
+									local newyunit = true
+									
+									for i,v in pairs(ysetunits) do
+										if v.x == chunit.x and v.y == chunit.y then
+											newyunit = false
+										end
+									end
+									
+									if newyunit then
+										table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+										ysetvalue = ysetvalue + chunitvalue
+										ychange = true
+									end
+									
+								elseif inum2.utype == 40 then
+									
+									local newzunit = true
+									
+									for i,v in pairs(zsetunits) do
+										if v.x == chunit.x and v.y == chunit.y then
+											newzunit = false
+										end
+									end
+									
+									if newzunit then
+										table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+										zsetvalue = zsetvalue + chunitvalue
+										zchange = true
 									end
 									
 								elseif tostring(inum2.value) ~= tostring(chunitvalue) then
@@ -100,15 +175,62 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
-											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												levelsetvalue = levelsetvalue + (chunit.value+num2)
+											if newxunit then
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												levelsetvalue = levelsetvalue + (chunitvalue+num2)
 												lschange = true
+											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												xsetvalue = xsetvalue + (chunitvalue+num2)
+												xchange = true
+											end
+											
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												ysetvalue = ysetvalue + (chunitvalue+num2)
+												ychange = true
+											end
+											
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												zsetvalue = zsetvalue + (chunitvalue+num2)
+												zchange = true
 											end
 											
 										elseif tostring(inum3.value) ~= tostring(chunitvalue+num2) then
@@ -122,16 +244,64 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
 											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												levelsetvalue = levelsetvalue + (chunit.value-num2)
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												levelsetvalue = levelsetvalue + (chunitvalue-num2)
 												lschange = true
 											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												xsetvalue = xsetvalue + (chunitvalue-num2)
+												xchange = true
+											end
+											
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												ysetvalue = ysetvalue + (chunitvalue-num2)
+												ychange = true
+											end
+											
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												zsetvalue = zsetvalue + (chunitvalue-num2)
+												zchange = true
+											end
+											
 										elseif tostring(inum3.value) ~= tostring(chunitvalue-num2) then
 											vchange = true
 											inum3.value = chunitvalue-num2
@@ -143,16 +313,63 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
 											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												levelsetvalue = levelsetvalue + (chunit.value/num2)
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												levelsetvalue = levelsetvalue + (chunitvalue/num2)
 												lschange = true
 											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												xsetvalue = xsetvalue + (chunitvalue/num2)
+												xchange = true
+											end
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												ysetvalue = ysetvalue + (chunitvalue/num2)
+												ychange = true
+											end
+										
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												zsetvalue = zsetvalue + (chunitvalue/num2)
+												zchange = true
+											end
+											
 										elseif tostring(inum3.value) ~= tostring(chunitvalue/num2) then
 											vchange = true
 											inum3.value = chunitvalue/num2
@@ -164,16 +381,63 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
 											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												levelsetvalue = levelsetvalue + (chunit.value*num2)
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												levelsetvalue = levelsetvalue + (chunitvalue*num2)
 												lschange = true
 											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												xsetvalue = xsetvalue + (chunitvalue*num2)
+												xchange = true
+											end
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												ysetvalue = ysetvalue + (chunitvalue*num2)
+												ychange = true
+											end
+											
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												zsetvalue = zsetvalue + (chunitvalue*num2)
+												zchange = true
+											end
+											
 										elseif tostring(inum3.value) ~= tostring(chunitvalue*num2) then
 											vchange = true
 											inum3.value = chunitvalue*num2
@@ -185,20 +449,79 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
 											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												if chunit.value == 0 and num2 == 0 then
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												if chunitvalue == 0 and num2 == 0 then
 													levelsetvalue = 0/0
 												else
-													levelsetvalue = levelsetvalue + (chunit.value^num2)
+													levelsetvalue = levelsetvalue + (chunitvalue^num2)
 												end
 												lschange = true
 											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												if chunitvalue == 0 and num2 == 0 then
+													xsetvalue = 0/0
+												else
+													xsetvalue = xsetvalue + (chunitvalue^num2)
+												end
+												xchange = true
+											end
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												if chunitvalue == 0 and num2 == 0 then
+													ysetvalue = 0/0
+												else
+													ysetvalue = ysetvalue + (chunitvalue^num2)
+												end
+												ychange = true
+											end
+											
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												if chunitvalue == 0 and num2 == 0 then
+													zsetvalue = 0/0
+												else
+													zsetvalue = zsetvalue + (chunitvalue^num2)
+												end
+												zchange = true
+											end
+											
 										elseif (tostring(inum3.value) ~= tostring(chunitvalue^num2) and not (chunitvalue == 0 and num2 == 0)) or (chunitvalue == 0 and num2 == 0 and tostring(inum3.value) ~= "nan") then
 											vchange = true
 											inum3.value = chunitvalue^num2
@@ -211,16 +534,63 @@ function parse()
 											local newlsunit = true
 									
 											for i,v in pairs(levelsetunits) do
-												if v == chunit then
+												if v.x == chunit.x and v.y == chunit.y then
 													newlsunit = false
 												end
 											end
 									
 											if newlsunit then
-												table.insert(levelsetunits,chunit)
-												levelsetvalue = levelsetvalue + (chunit.value%num2)
+												table.insert(levelsetunits,{x = chunit.x, y = chunit.y})
+												levelsetvalue = levelsetvalue + (chunitvalue*num2)
 												lschange = true
 											end
+										elseif inum3.utype == 38 then
+											
+											local newxunit = true
+											
+											for i,v in pairs(xsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newxunit = false
+												end
+											end
+											
+											if newxunit then
+												table.insert(xsetunits,{x = chunit.x, y = chunit.y})
+												xsetvalue = xsetvalue + (chunitvalue%num2)
+												xchange = true
+											end
+										elseif inum3.utype == 39 then
+											
+											local newyunit = true
+											
+											for i,v in pairs(ysetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newyunit = false
+												end
+											end
+											
+											if newyunit then
+												table.insert(ysetunits,{x = chunit.x, y = chunit.y})
+												ysetvalue = ysetvalue + (chunitvalue%num2)
+												ychange = true
+											end
+											
+										elseif inum3.utype == 40 then
+											
+											local newzunit = true
+											
+											for i,v in pairs(zsetunits) do
+												if v.x == chunit.x and v.y == chunit.y then
+													newzunit = false
+												end
+											end
+											
+											if newzunit then
+												table.insert(zsetunits,{x = chunit.x, y = chunit.y})
+												zsetvalue = zsetvalue + (chunitvalue%num2)
+												zchange = true
+											end
+											
 										elseif tostring(inum3.value) ~= tostring(chunitvalue%num2) then
 											vchange = true
 											inum3.value = chunitvalue%num2
@@ -418,12 +788,32 @@ function parse()
 		end
 	end
 	
-	if lschange and not vchange then
+	if lschange then
 		loadlevel(levelsetvalue)
 		playsfx("setlevel")
 		return
 	end
 	
+	if zchange and tostring(zsetvalue) ~= tostring(z) then
+		z = zsetvalue
+		setvarvalues()
+		checkdels()
+		parse()
+	end
+	
+	if ychange and tostring(ysetvalue) ~= tostring(y) then
+		y = ysetvalue
+		setvarvalues()
+		checkdels()
+		parse()
+	end
+	
+	if xchange and tostring(xsetvalue) ~= tostring(x) then
+		x = xsetvalue
+		setvarvalues()
+		checkdels()
+		parse()
+	end
 	
 	if vchange then
 		checkdels()

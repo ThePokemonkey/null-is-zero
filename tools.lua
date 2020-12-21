@@ -178,9 +178,22 @@ function loadlevel(num)
 	levelnum = strnum
 	undos = {}
 	if mode == "play" then
+		setvarvalues()
 		parse()
 		addundo()
 		levelchanged = true
+	end
+end
+
+function setvarvalues()
+	for i,unit in pairs(units) do
+		if unit.utype == 38 then
+			unit.value = x
+		elseif unit.utype == 39 then
+			unit.value = y
+		elseif unit.utype == 40 then
+			unit.value = z
+		end
 	end
 end
 

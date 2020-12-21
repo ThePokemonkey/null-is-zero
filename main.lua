@@ -23,6 +23,7 @@ function love.load()
 	runits = {}
 	inflooped = false
 	HACK_INFINITY = 0
+	PHACK_INFINITY = 0
 	
 	numfont1 = love.graphics.newFont("font.ttf",60)
 	numfont2 = love.graphics.newFont("font.ttf",42)
@@ -43,8 +44,15 @@ function love.load()
 	mode = "play"
 	
 	levelnum = "1"
+	x = 0
+	y = 0
+	z = 0
 	
-	texttypes = {"num",0,"num","op","op","op","op","equals","equals","op",0,0,"num","op","equals","equals","equals","equals","equals",0,"num",0,"num","num","numop","numop","numop","numop","numop","numop","numequals","numequals","numequals","numequals","numequals","numequals","numequals"}
+	infx = 0
+	infy = 0
+	infz = 0
+	
+	texttypes = {"num",0,"num","op","op","op","op","equals","equals","op",0,0,"num","op","equals","equals","equals","equals","equals",0,"num",0,"num","num","numop","numop","numop","numop","numop","numop","numequals","numequals","numequals","numequals","numequals","numequals","numequals","num","num","num"}
 	
 	numoffsets = {}
 	
@@ -67,13 +75,13 @@ function love.load()
 	numoffsets[23][6]={x = 16, y = 12, limit = 6,r = 1, g = 1, b = 1,font = numfont4, ending = 30}
 	
 	objsopen = false
-	objorder = {11,12,2,20,0,1,3,13,21,0,4,5,7,6,10,14,0,8,0,22,0,0,0,0,23,0,0,0,0,9,15,16,17,18,19,0,24,0,0,0,0,0,0,0,0,0,0,0,25,26,27,28,29,30,0,31,0,0,0,0,0,0,0,0,0,0,0,32,33,34,35,36,37}
+	objorder = {11,12,2,20,0,1,3,13,21,0,4,5,7,6,10,14,0,8,0,22,0,0,0,0,23,0,0,0,0,9,15,16,17,18,19,0,24,0,0,0,0,0,0,0,0,0,0,0,25,26,27,28,29,30,0,31,0,0,0,0,0,0,0,0,0,0,0,32,33,34,35,36,37,0,0,0,38,39,40}
 	cutype = 0
 	levelchanged = false
 	cid = 0
 	cimagetype = 0
 	
-	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png","plusnum.png","minusnum.png","timesnum.png","dividenum.png","exponentnum.png","modulonum.png","equalsnum.png","equalschecknum.png","lessthannum.png","greaterthannum.png","lessthanequalsnum.png","greaterthanequalsnum.png","notequalsnum.png"}
+	images = {"plr.png","wall.png","pushable.png","plus.png","minus.png","divide.png","times.png","equals.png","equalscheck.png","exponent.png","plrnonum.png","pushablenonum.png","wallnum.png","modulo.png","lessthan.png","greaterthan.png","lessthanequals.png","greaterthanequals.png","notequals.png","door.png","doornum.png","spike.png","spikenum.png","level.png","plusnum.png","minusnum.png","timesnum.png","dividenum.png","exponentnum.png","modulonum.png","equalsnum.png","equalschecknum.png","lessthannum.png","greaterthannum.png","lessthanequalsnum.png","greaterthanequalsnum.png","notequalsnum.png","x.png","y.png","z.png"}
 	sssfx = {win = love.audio.newSource("sfx/win.ogg","static"), restart = love.audio.newSource("sfx/restart.ogg","static"), setlevel = love.audio.newSource("sfx/setlevel.ogg","static")}
 	
 	objimages = {}
@@ -104,6 +112,7 @@ function love.load()
     levels = savedata
 	units = levels["1"] and deepCopy(levels["1"]) or {}
 	runits = levels["1"] and deepCopy(levels["1"]) or {}
+	setvarvalues() 
 	parse()
 	addundo()
   end
@@ -156,16 +165,19 @@ function love.keypressed(k)
 	if k == "m" then
 		if mode == "play" then
 			HACK_INFINITY = 0
+			PHACK_INFINITY = 0
 			inflooped = false
 			units = deepCopy(runits)
 			mode = "edit"
 		elseif mode == "edit" then 
 			runits = deepCopy(units)
 			HACK_INFINITY = 0
+			PHACK_INFINITY = 0
 			inflooped = false
 			objsopen = false
 			mode = "play"
 			undos = {}
+			setvarvalues()
 			parse()
 			addundo()
 		end
@@ -175,10 +187,15 @@ function love.keypressed(k)
 	
 		playsfx("restart")
 		
+		inflooped = false
+		PHACK_INFINITY = 0
+		HACK_INFINITY = 0
 		units = deepCopy(runits)
 		undos = {}
+		setvarvalues()
 		parse()
 		addundo()
+			
 		
 	end
 	
@@ -191,6 +208,7 @@ function love.keypressed(k)
 			units = deepCopy(undos[#undos-1])
 			table.remove(undos,#undos)
 			
+			setvarvalues()
 			deldels()
 			parse()
 			
@@ -216,7 +234,9 @@ function love.keypressed(k)
 		end	
 		
 		if k == "up" or k == "w" or k == "down" or k == "s" or k == "right" or k == "a" or k == "left" or k == "d" then
+			PHACK_INFINITY = 0
 			HACK_INFINITY = 0
+			setvarvalues()
 			deldels()
 			parse()
 			deldels()
@@ -349,7 +369,7 @@ function love.draw()
 			
 			love.graphics.draw(objimages_2[unit.utype], unit.x*60, unit.y*60)
 			
-			if (texttypes[unit.utype] == "num" or texttypes[unit.utype] == "numop" or texttypes[unit.utype] == "numequals") and unit.utype ~= 24 then
+			if (texttypes[unit.utype] == "num" or texttypes[unit.utype] == "numop" or texttypes[unit.utype] == "numequals") and unit.utype ~= 24 and unit.utype ~= 38 and unit.utype ~= 39 and unit.utype ~= 40 then
 				
 					love.graphics.setColor(0,0,0)
 					
@@ -454,6 +474,10 @@ function love.draw()
 		love.graphics.setFont(levelnumfont)
 		love.graphics.setColor(1, 1, 1)
 		love.graphics.print(levelnum, 10, 0)
+		
+		love.graphics.setFont(numfont3)
+		love.graphics.setColor(1, 1, 1)
+		love.graphics.print("x = "..x..", y = "..y..", z = "..z, 880, 0)
 	end
 	
 	if mode == "title" then
